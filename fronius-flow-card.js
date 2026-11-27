@@ -2,14 +2,14 @@
  * Fronius Flow Card — https://github.com/tsrz/fronius-flow-card
  * Energy flow card for Home Assistant: the inverter in the middle, linked to solar, home, grid and battery.
  * Auto-detects the entities of the Fronius (official), Fronius Modbus and Solcast integrations.
- * MIT License. Not affiliated with or endorsed by Fronius International GmbH.
+ * MIT License. Not affiliated with or endorsed by Fronius International GmbH; "Fronius" and its logo are trademarks of their owner.
  */
 const CARD_VERSION = "1.0.0";
 
 const I18N = {
   en: {
     solar: "Solar", home: "Home", grid: "Grid", grid_in: "Grid import", grid_out: "Solar surplus",
-    battery: "Battery", charging: "Charging", discharging: "Discharging",
+    battery: "Battery", no_battery: "No battery", charging: "Charging", discharging: "Discharging",
     today: "Produced today", left_today: "Forecast left today", remaining: "{v} kWh left", peak: "Expected solar peak", lux: "Brightness",
     aria: "Energy flow between solar, home, grid and battery",
     name: "Fronius Flow Card", desc: "Inverter in the middle, linked to solar, home, grid and battery.",
@@ -18,7 +18,7 @@ const I18N = {
   },
   fr: {
     solar: "Solaire", home: "Maison", grid: "Réseau", grid_in: "Achat réseau", grid_out: "Surplus solaire",
-    battery: "Batterie", charging: "Charge", discharging: "Décharge",
+    battery: "Batterie", no_battery: "Pas de batterie", charging: "Charge", discharging: "Décharge",
     today: "Produit aujourd'hui", left_today: "Reste à produire", remaining: "reste {v} kWh", peak: "Pic solaire prévu", lux: "Luminosité",
     aria: "Flux d'énergie entre le solaire, la maison, le réseau et la batterie",
     name: "Fronius Flow Card", desc: "Onduleur au centre, relié au solaire, à la maison, au réseau et à la batterie.",
@@ -38,6 +38,7 @@ const DEFAULTS = {
   invert_grid: false,
   invert_battery: false,
   inverter_label: "",
+  inverter_logo: true,
 };
 
 // Entity roles. "sign" is the sign convention of the detected entity (the card works with:
@@ -129,8 +130,8 @@ const link = (n) => {
 };
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
-// Generic hybrid inverter (no brand logo): grey front, fan, status LED, dark band with an optional label.
-const inverter = (label) => `
+// Inverter drawn after a Fronius GEN24: grey front, fan, button, dark band with the logo and an optional label.
+const inverter = (label, logo) => `
   <rect x="160" y="116" width="80" height="88" rx="10" fill="#f4f5f6" stroke="#aeb4b8" stroke-width=".7"/>
   <rect x="166" y="122" width="68" height="74" rx="6" fill="#dfe2e4"/>
   <circle cx="200" cy="146" r="16" fill="#2a2f33"/>
@@ -139,9 +140,12 @@ const inverter = (label) => `
   <circle cx="200" cy="146" r="5.5" fill="none" stroke="#7d868b" stroke-width=".7"/>
   <path d="M184 146 H216 M200 130 V162 M188.7 134.7 L211.3 157.3 M211.3 134.7 L188.7 157.3" stroke="#7d868b" stroke-width=".5"/>
   <circle cx="200" cy="146" r="2.2" fill="#aab1b5"/>
-  <circle cx="172" cy="162" r="2.2" fill="#4caf50"/>
+  <circle cx="172" cy="162" r="4.4" fill="#2a2f33"/>
+  <rect x="169" y="161.2" width="6" height="1.6" rx=".8" fill="#c7ccd0"/>
   <rect x="166" y="176" width="68" height="20" fill="#3b4145"/>
-  ${label ? `<text x="200" y="188.2" text-anchor="middle" font-size="5" font-weight="700" fill="#e4e6e8" font-family="Arial, sans-serif">${esc(label)}</text>` : ""}
+  ${logo ? `<ellipse cx="200" cy="186" rx="11.5" ry="4.2" fill="#d7141f"/>
+  <text x="200" y="187.7" text-anchor="middle" font-size="4.6" font-weight="700" font-style="italic" fill="#fff" font-family="Arial, sans-serif">Fronius</text>` : ""}
+  ${label ? `<text x="${logo ? 229 : 200}" y="188" text-anchor="${logo ? "end" : "middle"}" font-size="${logo ? 3.8 : 5}" font-weight="700" fill="#e4e6e8" font-family="Arial, sans-serif">${esc(label)}</text>` : ""}
   <rect x="178" y="204" width="5" height="3" rx=".8" fill="#2a2f33"/>
   <rect x="217" y="204" width="5" height="3" rx=".8" fill="#2a2f33"/>`;
 
@@ -263,12 +267,13 @@ class FroniusFlowCard extends HTMLElement {
         .today:focus-visible .big, .extra:focus-visible .mid { text-decoration: underline; }
         .hub { fill: var(--card-background-color, #1c1c1c); stroke: var(--divider-color, rgba(127,127,127,.4)); stroke-width: 1; }
         .hidden { display: none; }
+        .dim { opacity: .3; filter: grayscale(1); }
       </style>
       <ha-card>
         <svg viewBox="0 0 400 340" role="img" aria-label="${esc(t(this._hass, "aria"))}">
           ${links}
           <circle class="hub" cx="${CENTER.x}" cy="${CENTER.y}" r="${CENTER.r}"/>
-          <g transform="translate(0 10)">${inverter(this._config.inverter_label)}</g>
+          <g transform="translate(0 10)">${inverter(this._config.inverter_label, this._config.inverter_logo !== false)}</g>
           ${nodes}
           <g class="extra" data-role="peak_time_entity" tabindex="0" role="button">
             <rect x="132" y="244" width="136" height="42" fill="transparent"/>
@@ -356,10 +361,12 @@ class FroniusFlowCard extends HTMLElement {
     const gridActive = Math.abs(grid) >= c.min_flow;
     this._node("grid", share(grid, c.grid_max), this._power(grid), !gridActive ? t(h, "grid") : grid > 0 ? t(h, "grid_in") : t(h, "grid_out"));
 
+    // Without a battery, the battery stays drawn but greyed out, with no flow.
     const showBat = this._hasBattery;
-    this.shadowRoot.querySelector('[data-node="battery"]').classList.toggle("hidden", !showBat);
-    this.shadowRoot.querySelector('[data-link="battery"]').classList.toggle("hidden", !showBat);
-    if (showBat) {
+    this.shadowRoot.querySelector('[data-node="battery"]').classList.toggle("dim", !showBat);
+    this.shadowRoot.querySelector('[data-link="battery"]').classList.toggle("dim", !showBat);
+    if (!showBat) this._node("battery", 0, "–", t(h, "no_battery"));
+    else {
       const soc = e.soc_entity ? st[e.soc_entity] : null;
       const batActive = Math.abs(battery) >= c.min_flow;
       const socText = usable(soc) ? ` · ${this._fmt(soc.state, 0)} %` : "";
@@ -410,7 +417,7 @@ const EDITOR_LABELS = {
     today_entity: "Energy produced today", remaining_entity: "Forecast remaining today (Solcast)",
     peak_time_entity: "Expected peak time (Solcast)", peak_power_entity: "Expected peak power (Solcast)",
     lux_entity: "Brightness sensor", auto_detect: "Auto-detect missing entities", invert_grid: "Invert grid sign",
-    invert_battery: "Invert battery sign", inverter_label: "Text on the inverter", solar_max: "Solar ring max (W)",
+    invert_battery: "Invert battery sign", inverter_logo: "Show the Fronius logo on the inverter", inverter_label: "Text on the inverter (e.g. PRIMO)", solar_max: "Solar ring max (W)",
     home_max: "Home ring max (W)", grid_max: "Grid ring max (W)", min_flow: "Minimum flow shown (W)",
   },
   fr: {
@@ -421,7 +428,7 @@ const EDITOR_LABELS = {
     today_entity: "Énergie produite aujourd'hui", remaining_entity: "Prévision restante aujourd'hui (Solcast)",
     peak_time_entity: "Heure du pic prévu (Solcast)", peak_power_entity: "Puissance du pic prévu (Solcast)",
     lux_entity: "Capteur de luminosité", auto_detect: "Détecter automatiquement les entités manquantes", invert_grid: "Inverser le signe du réseau",
-    invert_battery: "Inverser le signe de la batterie", inverter_label: "Texte sur l'onduleur", solar_max: "Maximum de l'anneau solaire (W)",
+    invert_battery: "Inverser le signe de la batterie", inverter_logo: "Afficher le logo Fronius sur l'onduleur", inverter_label: "Texte sur l'onduleur (ex. PRIMO)", solar_max: "Maximum de l'anneau solaire (W)",
     home_max: "Maximum de l'anneau maison (W)", grid_max: "Maximum de l'anneau réseau (W)", min_flow: "Flux minimum affiché (W)",
   },
 };
@@ -448,6 +455,7 @@ class FroniusFlowCardEditor extends HTMLElement {
         { name: "auto_detect", selector: { boolean: {} } },
         { name: "invert_grid", selector: { boolean: {} } },
         { name: "invert_battery", selector: { boolean: {} } },
+        { name: "inverter_logo", selector: { boolean: {} } },
         { name: "inverter_label", selector: { text: {} } },
         { type: "grid", name: "", schema: [
           { name: "solar_max", selector: { number: { min: 500, max: 100000, step: 100, mode: "box" } } },

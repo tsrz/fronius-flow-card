@@ -4,13 +4,17 @@ An energy-flow card for Home Assistant, built for Fronius installations: the inv
 
 ![Fronius Flow Card](images/screenshot.jpg)
 
+Without a battery, in French: 
+
+<img src="images/screenshot-no-battery-fr.jpg" alt="Without battery" width="400">
+
 *Version française plus bas.*
 
 ## Features
 
 - **Zero configuration for most setups**: the entities of the official **Fronius** integration, of **Fronius Modbus** and of **Solcast PV Forecast** are detected automatically.
 - **Visual editor**: every entity can be replaced from the card editor; the detected one is shown under each field.
-- Works **with or without a battery** (the battery disappears when there is none).
+- Works **with or without a battery** (without one, the battery is shown greyed out).
 - **Home consumption** comes from the Fronius "load" sensor, or is computed (solar + grid + battery) when none is available.
 - Optional lines: energy produced today, Solcast forecast left today, expected solar peak, brightness sensor.
 - English and French, following the Home Assistant language.
@@ -70,7 +74,8 @@ lux_entity: sensor.outdoor_illuminance
 | `lux_entity` | — | Optional brightness sensor. |
 | `auto_detect` | `true` | Fill the missing entities automatically. Set `false` to use only the ones you configured. |
 | `invert_grid` / `invert_battery` | `false` | Invert the sign if your sensor uses the opposite convention. |
-| `inverter_label` | empty | Short text written on the inverter (e.g. `GEN24`). |
+| `inverter_logo` | `true` | Show the small Fronius logo on the inverter drawing. |
+| `inverter_label` | empty | Short text written on the inverter (e.g. `PRIMO`). |
 | `solar_max` / `home_max` / `grid_max` | 5000 / 10000 / 10000 | Power (W) that fills the whole ring. |
 | `min_flow` | `20` | Below this power (W), no flow is shown. |
 
@@ -88,7 +93,7 @@ Une carte de flux d'énergie pour Home Assistant, pensée pour les installations
 
 - **Sans configuration** dans la plupart des cas : les entités des intégrations **Fronius** (officielle), **Fronius Modbus** et **Solcast** sont détectées automatiquement.
 - **Éditeur visuel** : chaque entité peut être remplacée ; celle qui a été détectée est indiquée sous chaque champ.
-- Fonctionne **avec ou sans batterie**.
+- Fonctionne **avec ou sans batterie** (sans batterie, elle est affichée en grisé).
 - **Consommation de la maison** : capteur « charge » de Fronius, ou calculée (solaire + réseau + batterie).
 - Lignes facultatives : production du jour, prévision restante Solcast, pic solaire prévu, luminosité.
 - En français ou en anglais, selon la langue de Home Assistant.
@@ -101,7 +106,7 @@ Une carte de flux d'énergie pour Home Assistant, pensée pour les installations
 
 ## Disclaimer
 
-This is a community project. It is **not affiliated with, endorsed by or supported by Fronius International GmbH**. "Fronius" is a trademark of its owner and is used here only to describe compatibility. The drawings of the inverter and battery are generic and carry no brand logo.
+This is a community project. It is **not affiliated with, endorsed by or supported by Fronius International GmbH**. "Fronius" and the Fronius logo are trademarks of their owner; they are used here only to identify compatible hardware, and the logo can be hidden with `inverter_logo: false`. The battery drawing is generic.
 
 ## License
 
