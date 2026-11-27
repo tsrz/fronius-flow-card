@@ -39,6 +39,7 @@ const DEFAULTS = {
   invert_battery: false,
   inverter_label: "",
   inverter_logo: true,
+  show_missing_battery: true, // false: without a battery, 3-element layout with the grid at the bottom centre
 };
 
 // Entity roles. "sign" is the sign convention of the detected entity (the card works with:
@@ -228,18 +229,24 @@ class FroniusFlowCard extends HTMLElement {
   _render() {
     if (!this.shadowRoot) this.attachShadow({ mode: "open" });
     if (!this._hass) return;
-    const nodes = Object.entries(NODES)
+    // Compact layout: no battery and show_missing_battery: false -> the grid moves to the bottom centre.
+    const compact = this._config.show_missing_battery === false && !this._hasBattery;
+    this._compact = compact;
+    const layout = compact
+      ? { solar: NODES.solar, home: NODES.home, grid: { ...NODES.grid, x: 200, y: 310, labelX: 92, labelY: 302 } }
+      : NODES;
+    const nodes = Object.entries(layout)
       .map(([key, n]) => `<g class="node" data-node="${key}" style="--c:${n.color}" tabindex="0" role="button">
           <circle class="hit" cx="${n.x}" cy="${n.y}" r="${RING_R + 7}"/>
           <circle class="outer" cx="${n.x}" cy="${n.y}" r="${RING_R + 6}"/>
           ${ring(n)}
           <circle class="inner" cx="${n.x}" cy="${n.y}" r="${RING_R - 8}"/>
-          <g transform="translate(0 ${n.dy})">${{ solar: PANEL, home: HOME, grid: TOWER, battery: BATTERY }[key]}</g>
-          <text class="val" x="${n.x}" y="${n.labelY}" text-anchor="middle"></text>
-          <text class="lab" x="${n.x}" y="${n.labelY + 15}" text-anchor="middle"></text>
+          <g transform="translate(${n.x - NODES[key].x} ${n.y - NODES[key].y + n.dy})">${{ solar: PANEL, home: HOME, grid: TOWER, battery: BATTERY }[key]}</g>
+          <text class="val" x="${n.labelX ?? n.x}" y="${n.labelY}" text-anchor="middle"></text>
+          <text class="lab" x="${n.labelX ?? n.x}" y="${n.labelY + 15}" text-anchor="middle"></text>
         </g>`)
       .join("");
-    const links = Object.entries(NODES)
+    const links = Object.entries(layout)
       .map(([key, n]) => `<g class="lk" data-link="${key}" style="--c:${n.color}"><path class="line" d="${link(n)}"/><path class="flow" data-flow="${key}" d="${link(n)}"/></g>`)
       .join("");
     this.shadowRoot.innerHTML = `
@@ -270,17 +277,17 @@ class FroniusFlowCard extends HTMLElement {
         .dim { opacity: .3; filter: grayscale(1); }
       </style>
       <ha-card>
-        <svg viewBox="0 0 400 340" role="img" aria-label="${esc(t(this._hass, "aria"))}">
+        <svg viewBox="0 0 400 ${compact ? 380 : 340}" role="img" aria-label="${esc(t(this._hass, "aria"))}">
           ${links}
           <circle class="hub" cx="${CENTER.x}" cy="${CENTER.y}" r="${CENTER.r}"/>
           <g transform="translate(0 10)">${inverter(this._config.inverter_label, this._config.inverter_logo !== false)}</g>
           ${nodes}
-          <g class="extra" data-role="peak_time_entity" tabindex="0" role="button">
+          <g class="extra" data-role="peak_time_entity" tabindex="0" role="button" transform="${compact ? "translate(112 27)" : ""}">
             <rect x="132" y="244" width="136" height="42" fill="transparent"/>
             <text class="lab" x="200" y="259" text-anchor="middle">${esc(t(this._hass, "peak"))}</text>
             <text class="mid peak" x="200" y="277" text-anchor="middle"></text>
           </g>
-          <g class="extra" data-role="lux_entity" tabindex="0" role="button">
+          <g class="extra" data-role="lux_entity" tabindex="0" role="button" transform="${compact ? "translate(112 24)" : ""}">
             <rect x="132" y="288" width="136" height="42" fill="transparent"/>
             <text class="lab" x="200" y="302" text-anchor="middle">${esc(t(this._hass, "lux"))}</text>
             <text class="mid lux" x="200" y="320" text-anchor="middle"></text>
@@ -344,6 +351,7 @@ class FroniusFlowCard extends HTMLElement {
   _update() {
     if (!this._hass || !this._built || !this._ent) return;
     const c = this._config, e = this._ent, st = this._hass.states, h = this._hass;
+    if ((c.show_missing_battery === false && !this._hasBattery) !== !!this._compact) return this._render();
     const w = (id) => (id ? toW(st[id]) : null);
 
     const solar = Math.max(0, w(e.solar_entity) ?? 0);
@@ -363,10 +371,12 @@ class FroniusFlowCard extends HTMLElement {
 
     // Without a battery, the battery stays drawn but greyed out, with no flow.
     const showBat = this._hasBattery;
-    this.shadowRoot.querySelector('[data-node="battery"]').classList.toggle("dim", !showBat);
-    this.shadowRoot.querySelector('[data-link="battery"]').classList.toggle("dim", !showBat);
-    if (!showBat) this._node("battery", 0, "–", t(h, "no_battery"));
-    else {
+    if (!this._compact) {
+      this.shadowRoot.querySelector('[data-node="battery"]').classList.toggle("dim", !showBat);
+      this.shadowRoot.querySelector('[data-link="battery"]').classList.toggle("dim", !showBat);
+      if (!showBat) this._node("battery", 0, "–", t(h, "no_battery"));
+    }
+    if (showBat) {
       const soc = e.soc_entity ? st[e.soc_entity] : null;
       const batActive = Math.abs(battery) >= c.min_flow;
       const socText = usable(soc) ? ` · ${this._fmt(soc.state, 0)} %` : "";
@@ -403,7 +413,7 @@ class FroniusFlowCard extends HTMLElement {
     this._flow("solar", solar, "in");
     this._flow("home", home, "out");
     this._flow("grid", grid, grid > 0 ? "in" : "out");
-    this._flow("battery", showBat ? battery : 0, battery > 0 ? "in" : "out");
+    if (!this._compact) this._flow("battery", showBat ? battery : 0, battery > 0 ? "in" : "out");
   }
 }
 
@@ -417,7 +427,7 @@ const EDITOR_LABELS = {
     today_entity: "Energy produced today", remaining_entity: "Forecast remaining today (Solcast)",
     peak_time_entity: "Expected peak time (Solcast)", peak_power_entity: "Expected peak power (Solcast)",
     lux_entity: "Brightness sensor", auto_detect: "Auto-detect missing entities", invert_grid: "Invert grid sign",
-    invert_battery: "Invert battery sign", inverter_logo: "Show the Fronius logo on the inverter", inverter_label: "Text on the inverter (e.g. PRIMO)", solar_max: "Solar ring max (W)",
+    invert_battery: "Invert battery sign", show_missing_battery: "Without a battery, show it greyed out (off: grid at the bottom centre)", inverter_logo: "Show the Fronius logo on the inverter", inverter_label: "Text on the inverter (e.g. PRIMO)", solar_max: "Solar ring max (W)",
     home_max: "Home ring max (W)", grid_max: "Grid ring max (W)", min_flow: "Minimum flow shown (W)",
   },
   fr: {
@@ -428,7 +438,7 @@ const EDITOR_LABELS = {
     today_entity: "Énergie produite aujourd'hui", remaining_entity: "Prévision restante aujourd'hui (Solcast)",
     peak_time_entity: "Heure du pic prévu (Solcast)", peak_power_entity: "Puissance du pic prévu (Solcast)",
     lux_entity: "Capteur de luminosité", auto_detect: "Détecter automatiquement les entités manquantes", invert_grid: "Inverser le signe du réseau",
-    invert_battery: "Inverser le signe de la batterie", inverter_logo: "Afficher le logo Fronius sur l'onduleur", inverter_label: "Texte sur l'onduleur (ex. PRIMO)", solar_max: "Maximum de l'anneau solaire (W)",
+    invert_battery: "Inverser le signe de la batterie", show_missing_battery: "Sans batterie, l'afficher en grisé (sinon : réseau en bas au centre)", inverter_logo: "Afficher le logo Fronius sur l'onduleur", inverter_label: "Texte sur l'onduleur (ex. PRIMO)", solar_max: "Maximum de l'anneau solaire (W)",
     home_max: "Maximum de l'anneau maison (W)", grid_max: "Maximum de l'anneau réseau (W)", min_flow: "Flux minimum affiché (W)",
   },
 };
@@ -455,6 +465,7 @@ class FroniusFlowCardEditor extends HTMLElement {
         { name: "auto_detect", selector: { boolean: {} } },
         { name: "invert_grid", selector: { boolean: {} } },
         { name: "invert_battery", selector: { boolean: {} } },
+        { name: "show_missing_battery", selector: { boolean: {} } },
         { name: "inverter_logo", selector: { boolean: {} } },
         { name: "inverter_label", selector: { text: {} } },
         { type: "grid", name: "", schema: [
