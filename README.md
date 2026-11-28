@@ -8,6 +8,8 @@ Without a battery (French): greyed out, or `show_missing_battery: false`
 
 <img src="images/screenshot-no-battery-fr.jpg" alt="Without battery, greyed out" width="400"> <img src="images/screenshot-compact-fr.jpg" alt="Without battery, compact layout" width="400">
 
+[![Open your Home Assistant instance and show the Fronius Flow Card in the Marketplace.](https://my.home-assistant.io/badges/marketplace_repository.svg)](https://my.home-assistant.io/redirect/marketplace_repository/?owner=tsrz&repository=fronius-flow-card)
+
 *Version française plus bas.*
 
 ## Features
@@ -59,11 +61,16 @@ Save. Do **not** click *Reset Modbus API control* in normal use: it cancels any 
 
 ## Installation
 
-### Marketplace / HACS (custom repository)
+### Marketplace / HACS
 
-1. Open **Settings → Marketplace** (HACS on Home Assistant 2026.10 and older).
-2. Menu **⋮ → Add from link** (HACS: *Custom repositories*), paste `https://github.com/tsrz/fronius-flow-card` and choose the type **Dashboard** (HACS: *Lovelace* / *Dashboard*).
-3. Install **Fronius Flow Card**, then reload your browser.
+The card is in the default catalog.
+
+1. Click the button below, or open **Settings → Marketplace** (HACS on Home Assistant 2026.10 and older) and search for **Fronius Flow Card**.
+
+   [![Open your Home Assistant instance and show the Fronius Flow Card in the Marketplace.](https://my.home-assistant.io/badges/marketplace_repository.svg)](https://my.home-assistant.io/redirect/marketplace_repository/?owner=tsrz&repository=fronius-flow-card)
+
+2. Download it, then reload your browser.
+3. Add the *Fronius Flow Card* to a dashboard.
 
 ### Manual
 
@@ -151,7 +158,9 @@ Une carte de flux d'énergie pour Home Assistant, pensée pour les installations
 
 Enregistrer. Ne **pas** cliquer sur *Réinitialiser le contrôle Modbus API* en temps normal : cela annule les commandes en cours et remet l'onduleur en mode automatique.
 
-**Installation** : *Paramètres → Marketplace → ⋮ → Ajouter depuis un lien*, coller `https://github.com/tsrz/fronius-flow-card`, type **Tableau de bord**, installer, puis recharger le navigateur. Ajouter ensuite la carte *Fronius Flow Card* au tableau de bord.
+**Installation** : la carte est dans le catalogue officiel. Cliquer sur le bouton ci-dessous, ou ouvrir *Paramètres → Marketplace* et chercher **Fronius Flow Card** ; la télécharger, recharger le navigateur, puis ajouter la carte *Fronius Flow Card* au tableau de bord.
+
+[![Ouvrir la Fronius Flow Card dans le Marketplace de votre Home Assistant.](https://my.home-assistant.io/badges/marketplace_repository.svg)](https://my.home-assistant.io/redirect/marketplace_repository/?owner=tsrz&repository=fronius-flow-card)
 
 **Conventions de signe** : réseau positif = achat ; batterie positive = décharge. Les options `invert_grid` et `invert_battery` inversent le signe si besoin.
 
