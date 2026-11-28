@@ -20,6 +20,26 @@ Without a battery (French): greyed out, or `show_missing_battery: false`
 - English and French, following the Home Assistant language.
 - Click any element to open its history.
 
+## Requirements
+
+**Required**
+
+- **Home Assistant 2024.8** or newer.
+- **Power sensors for your installation**, at least the solar power. The easiest way is one of these integrations, whose entities the card finds on its own:
+  - **Fronius** (built-in integration, Solar API — enable *Solar API* in the inverter's web interface), or
+  - **Fronius Modbus** (custom integration, available in the Marketplace).
+
+  Any other power sensors (W or kW) work too: just select them in the card editor.
+
+**Optional**
+
+- **Solcast PV Forecast** (custom integration): shows the forecast left today and the expected solar peak.
+- **A "produced today" energy sensor** (kWh or Wh): see the tip below for recent GEN24 inverters.
+- **A brightness sensor** (lux), if you want that line.
+- A **battery** connected to the inverter: without one, the battery is greyed out or hidden.
+
+No other card (card-mod, etc.) is needed.
+
 ## Installation
 
 ### Marketplace / HACS (custom repository)
@@ -98,6 +118,11 @@ Une carte de flux d'énergie pour Home Assistant, pensée pour les installations
 - **Consommation de la maison** : capteur « charge » de Fronius, ou calculée (solaire + réseau + batterie).
 - Lignes facultatives : production du jour, prévision restante Solcast, pic solaire prévu, luminosité.
 - En français ou en anglais, selon la langue de Home Assistant.
+
+**Prérequis** :
+- *Obligatoire* : **Home Assistant 2024.8** ou plus récent, et des capteurs de puissance pour votre installation, au minimum la puissance solaire. Le plus simple : l'intégration **Fronius** (intégrée à HA, avec *Solar API* activée sur l'onduleur) ou **Fronius Modbus** (Marketplace), dont les entités sont détectées automatiquement. Tout autre capteur de puissance (W ou kW) fonctionne en le choisissant dans l'éditeur.
+- *Facultatif* : **Solcast PV Forecast** (prévision restante et pic solaire prévu), un capteur d'**énergie produite aujourd'hui**, un capteur de **luminosité**, une **batterie**.
+- Aucune autre carte n'est nécessaire.
 
 **Installation** : *Paramètres → Marketplace → ⋮ → Ajouter depuis un lien*, coller `https://github.com/tsrz/fronius-flow-card`, type **Tableau de bord**, installer, puis recharger le navigateur. Ajouter ensuite la carte *Fronius Flow Card* au tableau de bord.
 
