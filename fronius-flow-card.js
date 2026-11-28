@@ -4,7 +4,7 @@
  * Auto-detects the entities of the Fronius (official), Fronius Modbus and Solcast integrations.
  * MIT License. Not affiliated with or endorsed by Fronius International GmbH; "Fronius" and its logo are trademarks of their owner.
  */
-const CARD_VERSION = "1.0.0";
+const CARD_VERSION = "1.0.1";
 
 const I18N = {
   en: {
@@ -14,7 +14,10 @@ const I18N = {
     aria: "Energy flow between solar, home, grid and battery",
     name: "Fronius Flow Card", desc: "Inverter in the middle, linked to solar, home, grid and battery.",
     ed_entities: "Entities (leave empty to use the detected ones)", ed_detected: "Detected: {v}", ed_none: "nothing detected",
-    ed_options: "Options",
+    ed_options: "Options", ed_split: "Split sensors (optional)", ed_optional: "Optional", ed_home_calc: "Optional: computed from the other flows when empty",
+    ed_choose: "Nothing detected: choose your sensor", ed_unused_grid: "Not needed: the single grid sensor is used",
+    ed_unused_battery: "Not needed: the single battery sensor is used", ed_pair_grid: "Detected: separate import / export sensors",
+    ed_pair_battery: "Detected: separate charge / discharge sensors", ed_split_help: "Only if your grid or battery power comes as two sensors (one per direction).",
   },
   fr: {
     solar: "Solaire", home: "Maison", grid: "Réseau", grid_in: "Achat réseau", grid_out: "Surplus solaire",
@@ -23,7 +26,10 @@ const I18N = {
     aria: "Flux d'énergie entre le solaire, la maison, le réseau et la batterie",
     name: "Fronius Flow Card", desc: "Onduleur au centre, relié au solaire, à la maison, au réseau et à la batterie.",
     ed_entities: "Entités (laisser vide pour utiliser celles détectées)", ed_detected: "Détecté : {v}", ed_none: "rien de détecté",
-    ed_options: "Options",
+    ed_options: "Options", ed_split: "Capteurs séparés (facultatif)", ed_optional: "Facultatif", ed_home_calc: "Facultatif : calculée à partir des autres flux si vide",
+    ed_choose: "Rien de détecté : choisissez votre capteur", ed_unused_grid: "Inutile : le capteur réseau unique est utilisé",
+    ed_unused_battery: "Inutile : le capteur batterie unique est utilisé", ed_pair_grid: "Détecté : capteurs achat / vente séparés",
+    ed_pair_battery: "Détecté : capteurs charge / décharge séparés", ed_split_help: "Seulement si la puissance du réseau ou de la batterie arrive en deux capteurs (un par sens).",
   },
 };
 const lang = (hass) => ((hass?.locale?.language || hass?.language || "en").toLowerCase().startsWith("fr") ? "fr" : "en");
@@ -456,10 +462,14 @@ class FroniusFlowCardEditor extends HTMLElement {
     const ent = (name) => ({ name, selector: { entity: { domain: "sensor" } } });
     return [
       { type: "expandable", name: "", title: t(this._hass, "ed_entities"), expanded: true, schema: [
-        ent("solar_entity"), ent("grid_entity"), ent("grid_import_entity"), ent("grid_export_entity"),
-        ent("battery_entity"), ent("battery_charge_entity"), ent("battery_discharge_entity"), ent("soc_entity"),
+        ent("solar_entity"), ent("grid_entity"), ent("battery_entity"), ent("soc_entity"),
         ent("home_entity"), ent("today_entity"), ent("remaining_entity"), ent("peak_time_entity"),
         ent("peak_power_entity"), ent("lux_entity"),
+      ] },
+      { type: "expandable", name: "", title: t(this._hass, "ed_split"), schema: [
+        { type: "constant", name: "split_help", value: t(this._hass, "ed_split_help") },
+        ent("grid_import_entity"), ent("grid_export_entity"),
+        ent("battery_charge_entity"), ent("battery_discharge_entity"),
       ] },
       { type: "expandable", name: "", title: t(this._hass, "ed_options"), schema: [
         { name: "auto_detect", selector: { boolean: {} } },
@@ -477,19 +487,41 @@ class FroniusFlowCardEditor extends HTMLElement {
       ] },
     ];
   }
+  // Text under each entity field: what is detected, or why the field can stay empty.
+  _helper(name) {
+    if (!ROLES.includes(name) || this._config[name]) return undefined;
+    const c = this._config;
+    const det = c.auto_detect === false ? {} : detectEntities(this._hass);
+    const has = (k) => !!(c[k] || det[k]);
+    const h = (k, vars) => t(this._hass, k, vars);
+    if (name === "grid_import_entity" || name === "grid_export_entity") {
+      if (c.grid_entity || (!c.grid_import_entity && !c.grid_export_entity && det.grid_entity)) return h("ed_unused_grid");
+      return det[name] ? h("ed_detected", { v: det[name] }) : h("ed_optional");
+    }
+    if (name === "battery_charge_entity" || name === "battery_discharge_entity") {
+      if (c.battery_entity || (!c.battery_charge_entity && !c.battery_discharge_entity && det.battery_entity)) return h("ed_unused_battery");
+      return det[name] ? h("ed_detected", { v: det[name] }) : h("ed_optional");
+    }
+    if (det[name]) return h("ed_detected", { v: det[name] });
+    if (name === "grid_entity" && (has("grid_import_entity") || has("grid_export_entity"))) return h("ed_pair_grid");
+    if (name === "battery_entity" && (has("battery_charge_entity") || has("battery_discharge_entity"))) return h("ed_pair_battery");
+    if (name === "home_entity") return h("ed_home_calc");
+    if (name === "solar_entity" || name === "grid_entity") return h("ed_choose");
+    return h("ed_optional");
+  }
+
   _draw() {
     if (!this._hass || !this._config) return;
     if (!this._form) {
       this._form = document.createElement("ha-form");
       this._form.computeLabel = (s) => EDITOR_LABELS[lang(this._hass)][s.name] || EDITOR_LABELS.en[s.name] || s.name;
-      this._form.computeHelper = (s) => {
-        if (!ROLES.includes(s.name) || this._config[s.name]) return undefined;
-        const d = detectEntities(this._hass)[s.name];
-        return t(this._hass, "ed_detected", { v: d || t(this._hass, "ed_none") });
-      };
+      this._form.computeHelper = (s) => this._helper(s.name);
       this._form.addEventListener("value-changed", (ev) => {
         const cfg = { ...ev.detail.value };
-        for (const k of Object.keys(cfg)) if (cfg[k] === "" || cfg[k] === undefined || cfg[k] === null) delete cfg[k];
+        // Keep the YAML short: drop empty values and values equal to the defaults.
+        for (const k of Object.keys(cfg)) {
+          if (cfg[k] === "" || cfg[k] === undefined || cfg[k] === null || cfg[k] === DEFAULTS[k] || k === "split_help") delete cfg[k];
+        }
         this._config = cfg;
         this.dispatchEvent(new CustomEvent("config-changed", { detail: { config: cfg }, bubbles: true, composed: true }));
       });
