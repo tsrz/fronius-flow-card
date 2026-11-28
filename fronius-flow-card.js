@@ -4,7 +4,7 @@
  * Auto-detects the entities of the Fronius (official), Fronius Modbus and Solcast integrations.
  * MIT License. Not affiliated with or endorsed by Fronius International GmbH; "Fronius" and its logo are trademarks of their owner.
  */
-const CARD_VERSION = "1.0.5";
+const CARD_VERSION = "1.0.6";
 
 const I18N = {
   en: {
