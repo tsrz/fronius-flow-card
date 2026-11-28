@@ -4,7 +4,7 @@
  * Auto-detects the entities of the Fronius (official), Fronius Modbus and Solcast integrations.
  * MIT License. Not affiliated with or endorsed by Fronius International GmbH; "Fronius" and its logo are trademarks of their owner.
  */
-const CARD_VERSION = "1.0.1";
+const CARD_VERSION = "1.0.2";
 
 const I18N = {
   en: {
@@ -16,7 +16,7 @@ const I18N = {
     ed_entities: "Entities (leave empty to use the detected ones)", ed_detected: "Detected: {v}", ed_none: "nothing detected",
     ed_options: "Options", ed_split: "Split sensors (optional)", ed_optional: "Optional", ed_home_calc: "Optional: computed from the other flows when empty",
     ed_choose: "Nothing detected: choose your sensor", ed_unused_grid: "Not needed: the single grid sensor is used",
-    ed_unused_battery: "Not needed: the single battery sensor is used", ed_pair_grid: "Detected: separate import / export sensors",
+    ed_unused_battery: "Not needed: the single battery sensor is used", ed_pair_grid: "Detected: separate drawn / fed-in sensors",
     ed_pair_battery: "Detected: separate charge / discharge sensors", ed_split_help: "Only if your grid or battery power comes as two sensors (one per direction).",
   },
   fr: {
@@ -28,7 +28,7 @@ const I18N = {
     ed_entities: "Entités (laisser vide pour utiliser celles détectées)", ed_detected: "Détecté : {v}", ed_none: "rien de détecté",
     ed_options: "Options", ed_split: "Capteurs séparés (facultatif)", ed_optional: "Facultatif", ed_home_calc: "Facultatif : calculée à partir des autres flux si vide",
     ed_choose: "Rien de détecté : choisissez votre capteur", ed_unused_grid: "Inutile : le capteur réseau unique est utilisé",
-    ed_unused_battery: "Inutile : le capteur batterie unique est utilisé", ed_pair_grid: "Détecté : capteurs achat / vente séparés",
+    ed_unused_battery: "Inutile : le capteur batterie unique est utilisé", ed_pair_grid: "Détecté : capteurs soutirage / injection séparés",
     ed_pair_battery: "Détecté : capteurs charge / décharge séparés", ed_split_help: "Seulement si la puissance du réseau ou de la batterie arrive en deux capteurs (un par sens).",
   },
 };
@@ -426,9 +426,9 @@ class FroniusFlowCard extends HTMLElement {
 // ---------- visual editor ----------
 const EDITOR_LABELS = {
   en: {
-    solar_entity: "Solar power", grid_entity: "Grid power (+ import / − export)", grid_import_entity: "Grid import power",
-    grid_export_entity: "Grid export power", battery_entity: "Battery power (+ discharge / − charge)",
-    battery_charge_entity: "Battery charge power", battery_discharge_entity: "Battery discharge power",
+    solar_entity: "Solar power", grid_entity: "Grid power (+ drawn / − fed in)", grid_import_entity: "Power drawn from the grid (import)",
+    grid_export_entity: "Power fed into the grid (export)", battery_entity: "Battery power (+ discharge / − charge)",
+    battery_charge_entity: "Battery charging power", battery_discharge_entity: "Battery discharging power",
     soc_entity: "Battery state of charge (%)", home_entity: "Home consumption (empty = computed)",
     today_entity: "Energy produced today", remaining_entity: "Forecast remaining today (Solcast)",
     peak_time_entity: "Expected peak time (Solcast)", peak_power_entity: "Expected peak power (Solcast)",
@@ -437,9 +437,9 @@ const EDITOR_LABELS = {
     home_max: "Home ring max (W)", grid_max: "Grid ring max (W)", min_flow: "Minimum flow shown (W)",
   },
   fr: {
-    solar_entity: "Puissance solaire", grid_entity: "Puissance réseau (+ achat / − vente)", grid_import_entity: "Puissance achetée au réseau",
-    grid_export_entity: "Puissance vendue au réseau", battery_entity: "Puissance batterie (+ décharge / − charge)",
-    battery_charge_entity: "Puissance de charge batterie", battery_discharge_entity: "Puissance de décharge batterie",
+    solar_entity: "Puissance solaire", grid_entity: "Puissance réseau (+ soutirage / − injection)", grid_import_entity: "Puissance soutirée du réseau (achat)",
+    grid_export_entity: "Puissance injectée dans le réseau (vente)", battery_entity: "Puissance batterie (+ décharge / − charge)",
+    battery_charge_entity: "Puissance de charge de la batterie", battery_discharge_entity: "Puissance de décharge de la batterie",
     soc_entity: "Charge de la batterie (%)", home_entity: "Consommation maison (vide = calculée)",
     today_entity: "Énergie produite aujourd'hui", remaining_entity: "Prévision restante aujourd'hui (Solcast)",
     peak_time_entity: "Heure du pic prévu (Solcast)", peak_power_entity: "Puissance du pic prévu (Solcast)",
