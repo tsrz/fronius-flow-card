@@ -40,6 +40,23 @@ Without a battery (French): greyed out, or `show_missing_battery: false`
 
 No other card (card-mod, etc.) is needed.
 
+### Inverter Modbus settings (only for the Fronius Modbus integration)
+
+Not needed with the built-in **Fronius** integration, which uses the Solar API. If you choose **Fronius Modbus**, open the inverter's web interface (its IP address in a browser), then go to **Communication → Modbus**:
+
+![Modbus settings of a Fronius GEN24 inverter (French interface)](images/modbus-settings-fr.jpg)
+
+| Setting | Value |
+|---|---|
+| **Mode** | **TCP server**: Home Assistant reads the inverter over the network |
+| **Modbus port** | **502** (use the same port in the integration) |
+| **Meter address offset** | **200** (default, expected by the integration) |
+| **SunSpec Model Type** | **int + SF**: with *float*, the registers move and the values read are wrong |
+| **Allow control** | Only if you want Home Assistant to **control** the inverter (battery charge/discharge automations). The card only reads, so it works with this option off. |
+| **Limit control** | Optional: restricts control to one IP address (your Home Assistant's). Safer, but control stops working if that address changes. |
+
+Save. Do **not** click *Reset Modbus API control* in normal use: it cancels any command in progress and puts the inverter back in automatic mode.
+
 ## Installation
 
 ### Marketplace / HACS (custom repository)
@@ -123,6 +140,16 @@ Une carte de flux d'énergie pour Home Assistant, pensée pour les installations
 - *Obligatoire* : **Home Assistant 2024.8** ou plus récent, et des capteurs de puissance pour votre installation, au minimum la puissance solaire. Le plus simple : l'intégration **Fronius** (intégrée à HA, avec *Solar API* activée sur l'onduleur) ou **Fronius Modbus** (Marketplace), dont les entités sont détectées automatiquement. Tout autre capteur de puissance (W ou kW) fonctionne en le choisissant dans l'éditeur.
 - *Facultatif* : **Solcast PV Forecast** (prévision restante et pic solaire prévu), un capteur d'**énergie produite aujourd'hui**, un capteur de **luminosité**, une **batterie**.
 - Aucune autre carte n'est nécessaire.
+
+**Réglages Modbus de l'onduleur** (seulement pour l'intégration Fronius Modbus ; inutile avec l'intégration Fronius officielle, qui passe par la Solar API) : ouvrir l'interface web de l'onduleur (son adresse IP dans un navigateur), puis le menu **Communication → Modbus** (capture ci-dessus) :
+- **Mode** : **Serveur TCP** ;
+- **Port Modbus** : **502** (le même que dans l'intégration) ;
+- **Adresse du compteur offset** : **200** (valeur par défaut, attendue par l'intégration) ;
+- **SunSpec Model Type** : **int + SF** (avec *float*, les valeurs lues sont fausses) ;
+- **Autoriser la commande** : seulement pour **piloter** l'onduleur depuis Home Assistant (automatisations de charge ou décharge de la batterie). La carte ne fait que lire : elle fonctionne sans ;
+- **Limiter la commande** : facultatif, réserve la commande à une seule adresse IP (celle de Home Assistant). Plus sûr, mais la commande cesse de fonctionner si cette adresse change.
+
+Enregistrer. Ne **pas** cliquer sur *Réinitialiser le contrôle Modbus API* en temps normal : cela annule les commandes en cours et remet l'onduleur en mode automatique.
 
 **Installation** : *Paramètres → Marketplace → ⋮ → Ajouter depuis un lien*, coller `https://github.com/tsrz/fronius-flow-card`, type **Tableau de bord**, installer, puis recharger le navigateur. Ajouter ensuite la carte *Fronius Flow Card* au tableau de bord.
 
