@@ -2,7 +2,7 @@
 
 An energy-flow card for Home Assistant, built for Fronius installations: the inverter sits in the middle and is linked to the solar panels, the home, the grid and the battery. Animated dots show where the power flows, and each ring fills up with the power (or the battery's state of charge).
 
-![Fronius Flow Card](images/screenshot.jpg)
+<img src="images/flow-animated.svg" alt="Fronius Flow Card (animated)" width="520">
 
 Without a battery (French): greyed out, or `show_missing_battery: false`
 
