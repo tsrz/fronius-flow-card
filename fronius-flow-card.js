@@ -4,7 +4,7 @@
  * Auto-detects the entities of the Fronius (official), Fronius Modbus and Solcast integrations.
  * MIT License. Not affiliated with or endorsed by Fronius International GmbH; "Fronius" and its logo are trademarks of their owner.
  */
-const CARD_VERSION = "1.0.2";
+const CARD_VERSION = "1.0.3";
 
 const I18N = {
   en: {
@@ -239,7 +239,8 @@ class FroniusFlowCard extends HTMLElement {
     const compact = this._config.show_missing_battery === false && !this._hasBattery;
     this._compact = compact;
     const layout = compact
-      ? { solar: NODES.solar, home: NODES.home, grid: { ...NODES.grid, x: 200, y: 310, labelX: 92, labelY: 302 } }
+      // Same centre-to-centre distance as solar and home (hypot(130, 108) ≈ 169), so the link has the same length.
+      ? { solar: NODES.solar, home: NODES.home, grid: { ...NODES.grid, x: 200, y: CENTER.y + Math.round(Math.hypot(130, 108)), labelX: 92, labelY: 331 } }
       : NODES;
     const nodes = Object.entries(layout)
       .map(([key, n]) => `<g class="node" data-node="${key}" style="--c:${n.color}" tabindex="0" role="button">
@@ -283,17 +284,17 @@ class FroniusFlowCard extends HTMLElement {
         .dim { opacity: .3; filter: grayscale(1); }
       </style>
       <ha-card>
-        <svg viewBox="0 0 400 ${compact ? 380 : 340}" role="img" aria-label="${esc(t(this._hass, "aria"))}">
+        <svg viewBox="0 0 400 ${compact ? 404 : 340}" role="img" aria-label="${esc(t(this._hass, "aria"))}">
           ${links}
           <circle class="hub" cx="${CENTER.x}" cy="${CENTER.y}" r="${CENTER.r}"/>
           <g transform="translate(0 10)">${inverter(this._config.inverter_label, this._config.inverter_logo !== false)}</g>
           ${nodes}
-          <g class="extra" data-role="peak_time_entity" tabindex="0" role="button" transform="${compact ? "translate(112 27)" : ""}">
+          <g class="extra" data-role="peak_time_entity" tabindex="0" role="button" transform="${compact ? "translate(112 52)" : ""}">
             <rect x="132" y="244" width="136" height="42" fill="transparent"/>
             <text class="lab" x="200" y="259" text-anchor="middle">${esc(t(this._hass, "peak"))}</text>
             <text class="mid peak" x="200" y="277" text-anchor="middle"></text>
           </g>
-          <g class="extra" data-role="lux_entity" tabindex="0" role="button" transform="${compact ? "translate(112 24)" : ""}">
+          <g class="extra" data-role="lux_entity" tabindex="0" role="button" transform="${compact ? "translate(112 50)" : ""}">
             <rect x="132" y="288" width="136" height="42" fill="transparent"/>
             <text class="lab" x="200" y="302" text-anchor="middle">${esc(t(this._hass, "lux"))}</text>
             <text class="mid lux" x="200" y="320" text-anchor="middle"></text>
